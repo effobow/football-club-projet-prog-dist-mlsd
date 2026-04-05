@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: selection-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: selection-service
+  template:
+    metadata:
+      labels:
+        app: selection-service
+    spec:
+      containers:
+        - name: selection-service
+          image: selection-service:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8001
