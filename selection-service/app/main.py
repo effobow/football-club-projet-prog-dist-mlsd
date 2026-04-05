@@ -5,6 +5,8 @@ from .database import Base, engine, SessionLocal
 from .models import Selection
 from .schemas import SelectionCreate, SelectionResponse
 
+import requests
+
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Selection Service")
@@ -41,6 +43,25 @@ def get_selections(db: Session = Depends(get_db)):
 
 @app.post("/selections", response_model=SelectionResponse)
 def create_selection(selection: SelectionCreate, db: Session = Depends(get_db)):
+
+    # 🔥 Vérification des joueurs via players-service
+    for player_id in selection.player_ids:
+        response = requests.get(f"http://players-service:8000/players/{player_id}")
+
+        if response.status_code != 200:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Player {player_id} not found"
+            )
+
+        player = response.json()
+
+        if player["availability"] != "available":
+            raise HTTPException(
+                status_code=400,
+                detail=f"Player {player_id} not available"
+            )
+
     players_str = ",".join(map(str, selection.player_ids))
 
     new_selection = Selection(
